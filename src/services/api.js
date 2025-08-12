@@ -14,6 +14,25 @@ api.interceptors.request.use((config) => {
   return config
 })
 
+// Auto-logout se riceviamo 401 dal backend
+function goLogin() {
+  const gymId = JSON.parse(localStorage.getItem('pp_partner') || '{}')?.gym_id || 1
+  window.location.href = `/login?gym_id=${gymId}`
+}
+
+api.interceptors.response.use(
+  (res) => res,
+  (error) => {
+    if (error?.response?.status === 401) {
+      localStorage.removeItem('pp_token')
+      localStorage.removeItem('pp_partner')
+      message.warning('Sessione scaduta. Effettua di nuovo il login.')
+      goLogin()
+    }
+    return Promise.reject(error)
+  }
+)
+
 export async function partnerLogin(email, password){
   const { data } = await api.post('/auth/partner/login', { email, password })
   // expected { token, partner }
