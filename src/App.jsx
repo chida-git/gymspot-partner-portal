@@ -10,6 +10,7 @@ import OverviewPage from './pages/OverviewPage.jsx'
 import LoginPage from './pages/LoginPage.jsx'
 import HeaderBar from './components/HeaderBar.jsx'
 import ProtectedRoute from './components/ProtectedRoute.jsx'
+import AccessPage from './pages/AccessPage.jsx'
 const { Sider, Content } = Layout
 export default function App() {
   const [sp] = useSearchParams()
@@ -34,7 +35,8 @@ export default function App() {
             { key: 'plans', icon: <ToolOutlined/>, label: 'Piani & Prezzi' },
             { key: 'slots', icon: <ScheduleOutlined/>, label: 'Slot & Capienze' },
             { key: 'payouts', icon: <DollarOutlined/>, label: 'Payout' },
-            { key: 'checkins', icon: <ScheduleOutlined/>, label: 'Check-in oggi' }
+            { key: 'checkins', icon: <ScheduleOutlined/>, label: 'Check-in oggi' },
+            { key: 'access', label: 'Validazione accesso' }
           ]}
         />
       </Sider>
@@ -49,6 +51,7 @@ export default function App() {
             <Route path="/payouts" element={<ProtectedRoute><PayoutsPage /></ProtectedRoute>} />
             <Route path="/checkins" element={<ProtectedRoute><CheckinsPage /></ProtectedRoute>} />
             <Route path="/login" element={<LoginPage />} />
+            <Route path="/access" element={<ProtectedRoute><AccessPage /></ProtectedRoute>} />
           </Routes>
         </Content>
       </Layout>

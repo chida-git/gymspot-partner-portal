@@ -53,3 +53,11 @@ export async function getCheckins(gymId, date, q){
   const { data } = await api.get('/partner/checkins', { params: { gym_id: gymId, date, q } })
   return data
 }
+
+export async function validateAccessAndFetchUser(tokenRaw, deviceId) {
+  const { data } = await api.post('/partner/access/validate-user', {
+    token_raw: tokenRaw,
+    device_id: deviceId,
+  })
+  return data  // { granted, id_user, user }
+}
