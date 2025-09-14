@@ -1,7 +1,7 @@
 import React, { useMemo } from 'react'
 import { Layout, Menu } from 'antd'
 import { Route, Routes, useLocation, useNavigate, useSearchParams } from 'react-router-dom'
-import { AppstoreOutlined, DollarOutlined, ScheduleOutlined, ToolOutlined } from '@ant-design/icons'
+import { AppstoreOutlined, DollarOutlined, ScheduleOutlined, ToolOutlined, SafetyOutlined  } from '@ant-design/icons'
 import PlansPage from './pages/PlansPage.jsx'
 import SlotsPage from './pages/SlotsPage.jsx'
 import PayoutsPage from './pages/PayoutsPage.jsx'
@@ -21,6 +21,8 @@ export default function App() {
     if (p.startsWith('/plans')) return 'plans'
     if (p.startsWith('/slots')) return 'slots'
     if (p.startsWith('/payouts')) return 'payouts'
+    if (p.startsWith('/checkins')) return 'checkins'
+    if (p.startsWith('/access')) return 'access'
     return 'overview'
   }, [location.pathname])
   const gymId = Number(sp.get('gym_id') || 1)
@@ -36,7 +38,7 @@ export default function App() {
             { key: 'slots', icon: <ScheduleOutlined/>, label: 'Slot & Capienze' },
             { key: 'payouts', icon: <DollarOutlined/>, label: 'Payout' },
             { key: 'checkins', icon: <ScheduleOutlined/>, label: 'Check-in oggi' },
-            { key: 'access', label: 'Validazione accesso' }
+            { key: 'access', icon: <SafetyOutlined/>, label: 'Validazione accesso' }
           ]}
         />
       </Sider>

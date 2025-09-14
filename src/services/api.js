@@ -54,10 +54,12 @@ export async function getCheckins(gymId, date, q){
   return data
 }
 
-export async function validateAccessAndFetchUser(tokenRaw, deviceId) {
-  const { data } = await api.post('/partner/access/validate-user', {
-    token_raw: tokenRaw,
-    device_id: deviceId,
-  })
-  return data  // { granted, id_user, user }
+export async function validateAccessAndFetchUser(tokenRaw) {
+  const { data } = await api.post('/partner/access/validate-user', { token_raw: tokenRaw })
+  return data // { granted, id_user, device_id, user }
+}
+
+export async function getUserFull(idUser) {
+  const { data } = await api.get(`/partner/access/users/${idUser}/full`)
+  return data  // { id_user, user: {name,surname,mail}, subscription: {...} }
 }
