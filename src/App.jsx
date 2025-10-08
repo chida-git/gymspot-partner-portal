@@ -1,7 +1,7 @@
 import React, { useMemo } from 'react'
 import { Layout, Menu } from 'antd'
 import { Route, Routes, useLocation, useNavigate, useSearchParams } from 'react-router-dom'
-import { AppstoreOutlined, DollarOutlined, ScheduleOutlined, ToolOutlined, SafetyOutlined  } from '@ant-design/icons'
+import { AppstoreOutlined, DollarOutlined, ScheduleOutlined, ToolOutlined, SafetyOutlined, ProductOutlined  } from '@ant-design/icons'
 import PlansPage from './pages/PlansPage.jsx'
 import SlotsPage from './pages/SlotsPage.jsx'
 import PayoutsPage from './pages/PayoutsPage.jsx'
@@ -11,6 +11,8 @@ import LoginPage from './pages/LoginPage.jsx'
 import HeaderBar from './components/HeaderBar.jsx'
 import ProtectedRoute from './components/ProtectedRoute.jsx'
 import AccessPage from './pages/AccessPage.jsx'
+import GymProfilePage from './pages/GymProfilePage';
+
 const { Sider, Content } = Layout
 export default function App() {
   const [sp] = useSearchParams()
@@ -23,6 +25,7 @@ export default function App() {
     if (p.startsWith('/payouts')) return 'payouts'
     if (p.startsWith('/checkins')) return 'checkins'
     if (p.startsWith('/access')) return 'access'
+    if (p.startsWith('/profile')) return 'profile'
     return 'overview'
   }, [location.pathname])
   const gymId = Number(sp.get('gym_id') || 1)
@@ -34,6 +37,7 @@ export default function App() {
           onClick={(e) => navigate(`/${e.key}?gym_id=${gymId}`)}
           items={[
             { key: 'overview', icon: <AppstoreOutlined/>, label: 'Oggi' },
+            { key: 'profile', icon: <ProductOutlined/>, label: 'Profilo' },
             { key: 'plans', icon: <ToolOutlined/>, label: 'Piani & Prezzi' },
             { key: 'slots', icon: <ScheduleOutlined/>, label: 'Slot & Capienze' },
             { key: 'payouts', icon: <DollarOutlined/>, label: 'Payout' },
@@ -54,6 +58,7 @@ export default function App() {
             <Route path="/checkins" element={<ProtectedRoute><CheckinsPage /></ProtectedRoute>} />
             <Route path="/login" element={<LoginPage />} />
             <Route path="/access" element={<ProtectedRoute><AccessPage /></ProtectedRoute>} />
+            <Route path="/profile" element={<ProtectedRoute><GymProfilePage /></ProtectedRoute>} />
           </Routes>
         </Content>
       </Layout>

@@ -63,3 +63,84 @@ export async function getUserFull(idUser) {
   const { data } = await api.get(`/partner/access/users/${idUser}/full`)
   return data  // { id_user, user: {name,surname,mail}, subscription: {...} }
 }
+
+// --- PROFILE ---
+export async function getGymProfile(gymId) {
+  const rs = await fetch(`${import.meta.env.VITE_API_BASE}/gyms/${gymId}/profile`, {
+    credentials: 'include',
+    headers: { 'Accept': 'application/json' }
+  });
+
+  if (!rs.ok) throw new Error(`getGymProfile ${rs.status}`);
+  return rs.json();
+}
+
+export async function updateGymProfile(gymId, data) {
+  const rs = await fetch(`${import.meta.env.VITE_API_BASE}/gyms/${gymId}/profile`, {
+    method: 'PUT',
+    credentials: 'include',
+    headers: { 'Content-Type': 'application/json', 'Accept': 'application/json' },
+    body: JSON.stringify(data)
+  });
+  if (!rs.ok) {
+    const errText = await rs.text().catch(()=>'');
+    throw new Error(`updateGymProfile ${rs.status} ${errText}`);
+  }
+  return rs.json();
+}
+
+// --- PRESENTATION IMAGES ---
+export async function listPresentationImages(gymId, { limit = 10, token = '' } = {}) {
+  const url = new URL(`${import.meta.env.VITE_API_BASE}/gyms/${gymId}/presentation/images`);
+  url.searchParams.set('limit', String(limit));
+  if (token) url.searchParams.set('token', token);
+  const rs = await fetch(url, { credentials: 'include' });
+  if (!rs.ok) throw new Error(`listImages ${rs.status}`);
+  return rs.json(); // { ok, items:[{key,filename,url}], nextToken }
+}
+
+export async function uploadPresentationImages(gymId, files) {
+  const fd = new FormData();
+  [...files].forEach(f => fd.append('images', f));
+  const rs = await fetch(`${import.meta.env.VITE_API_BASE}/gyms/${gymId}/presentation/images`, {
+    method: 'POST',
+    credentials: 'include',
+    body: fd
+  });
+  if (!rs.ok) {
+    const t = await rs.text().catch(()=> '');
+    throw new Error(t || `uploadImages ${rs.status}`);
+  }
+  return rs.json();
+}
+
+export async function deletePresentationImage(gymId, filename) {
+  const rs = await fetch(`${import.meta.env.VITE_API_BASE}/gyms/${gymId}/presentation/images/${encodeURIComponent(filename)}`, {
+    method: 'DELETE',
+    credentials: 'include'
+  });
+  if (!rs.ok) throw new Error(`deleteImage ${rs.status}`);
+  return rs.json();
+}
+
+// --- INDEX PHOTO ---
+export function getIndexImageUrl(gymId) {
+  // endpoint restituisce l’immagine: usiamo URL diretto con cache-buster
+  const ts = Date.now();
+  return `${import.meta.env.VITE_API_BASE}/gyms/${gymId}/presentation/index?ts=${ts}`;
+}
+
+export async function putIndexImage(gymId, file) {
+  const fd = new FormData();
+  fd.append('image', file);
+  const rs = await fetch(`${import.meta.env.VITE_API_BASE}/gyms/${gymId}/presentation/index`, {
+    method: 'PUT',
+    credentials: 'include',
+    body: fd
+  });
+  if (!rs.ok) {
+    const t = await rs.text().catch(()=> '');
+    throw new Error(t || `putIndexImage ${rs.status}`);
+  }
+  return rs.json();
+}
