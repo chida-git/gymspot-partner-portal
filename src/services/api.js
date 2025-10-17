@@ -33,6 +33,15 @@ api.interceptors.response.use(
   }
 )
 
+export async function fetchRoutesConfig(gymId, signal) {
+  const res = await fetch(`${import.meta.env.VITE_API_BASE}/routes/${gymId}/routes`, {
+    credentials: 'include',
+    signal,
+  });
+  if (!res.ok) throw new Error(`HTTP ${res.status}`);
+  return res.json(); // es: { overview: true, plans: false, ... }
+}
+
 export async function partnerLogin(email, password){
   const { data } = await api.post('/auth/partner/login', { email, password })
   // expected { token, partner }

@@ -1,7 +1,7 @@
 import React, { useMemo } from 'react'
 import { Layout, Menu } from 'antd'
-import { Route, Routes, useLocation, useNavigate, useSearchParams } from 'react-router-dom'
-import { AppstoreOutlined, DollarOutlined, ScheduleOutlined, ToolOutlined, SafetyOutlined, ProductOutlined  } from '@ant-design/icons'
+import { Route, Routes, Navigate, useLocation, useNavigate, useSearchParams } from 'react-router-dom'
+import { AppstoreOutlined, DollarOutlined, ScheduleOutlined, ToolOutlined, SafetyOutlined, ProductOutlined } from '@ant-design/icons'
 import PlansPage from './pages/PlansPage.jsx'
 import SlotsPage from './pages/SlotsPage.jsx'
 import PayoutsPage from './pages/PayoutsPage.jsx'
@@ -11,13 +11,22 @@ import LoginPage from './pages/LoginPage.jsx'
 import HeaderBar from './components/HeaderBar.jsx'
 import ProtectedRoute from './components/ProtectedRoute.jsx'
 import AccessPage from './pages/AccessPage.jsx'
-import GymProfilePage from './pages/GymProfilePage';
+import GymProfilePage from './pages/GymProfilePage'
+import { useGymRoutesConfig } from './hooks/useGymRoutesConfig' // <-- usa la hook
 
 const { Sider, Content } = Layout
+
+// Gate per bloccare l’accesso a rotte disattivate
+function FeatureGate({ routeKey, enabledMap, children }) {
+  if (!enabledMap?.[routeKey]) return <Navigate to="/overview" replace />
+  return children
+}
+
 export default function App() {
   const [sp] = useSearchParams()
   const navigate = useNavigate()
   const location = useLocation()
+
   const selected = useMemo(() => {
     const p = location.pathname
     if (p.startsWith('/plans')) return 'plans'
@@ -28,37 +37,113 @@ export default function App() {
     if (p.startsWith('/profile')) return 'profile'
     return 'overview'
   }, [location.pathname])
+
   const gymId = Number(sp.get('gym_id') || 1)
+
+  // prende config + stato caricamento dalla hook
+  const { config: cfg, loading: loadingCfg } = useGymRoutesConfig(gymId)
+
+  const menuItems = [
+    { key: 'overview', icon: <AppstoreOutlined/>, label: 'Oggi' },
+    { key: 'profile',  icon: <ProductOutlined/>,  label: 'Profilo' },
+    { key: 'plans',    icon: <ToolOutlined/>,     label: 'Piani & Prezzi' },
+    { key: 'slots',    icon: <ScheduleOutlined/>, label: 'Slot & Capienze' },
+    { key: 'payouts',  icon: <DollarOutlined/>,   label: 'Payout' },
+    { key: 'checkins', icon: <ScheduleOutlined/>, label: 'Check-in oggi' },
+    { key: 'access',   icon: <SafetyOutlined/>,   label: 'Validazione accesso' }
+  ]
+
+  const visibleItems = loadingCfg ? menuItems : menuItems.filter(i => !!cfg[i.key])
+  console.log(visibleItems);
+
   return (
     <Layout style={{ minHeight: '100vh' }}>
       <Sider width={220} breakpoint="lg">
-        <div style={{ height: 64, display: 'grid', placeItems: 'center', color: '#fff', fontWeight: 700 }}>Partner Portal</div>
-        <Menu theme="dark" mode="inline" selectedKeys={[selected]}
+        <div style={{ height: 64, display: 'grid', placeItems: 'center', color: '#fff', fontWeight: 700 }}>
+          Partner Portal
+        </div>
+        <Menu
+          theme="dark"
+          mode="inline"
+          selectedKeys={[selected]}
           onClick={(e) => navigate(`/${e.key}?gym_id=${gymId}`)}
-          items={[
-            { key: 'overview', icon: <AppstoreOutlined/>, label: 'Oggi' },
-            { key: 'profile', icon: <ProductOutlined/>, label: 'Profilo' },
-            { key: 'plans', icon: <ToolOutlined/>, label: 'Piani & Prezzi' },
-            { key: 'slots', icon: <ScheduleOutlined/>, label: 'Slot & Capienze' },
-            { key: 'payouts', icon: <DollarOutlined/>, label: 'Payout' },
-            { key: 'checkins', icon: <ScheduleOutlined/>, label: 'Check-in oggi' },
-            { key: 'access', icon: <SafetyOutlined/>, label: 'Validazione accesso' }
-          ]}
+          items={visibleItems}
         />
       </Sider>
+
       <Layout>
         <HeaderBar />
         <Content className="page">
+          {loadingCfg && <div style={{ padding: 16 }}>Caricamento impostazioni…</div>}
+
           <Routes>
-            <Route path="/" element={<ProtectedRoute><OverviewPage /></ProtectedRoute>} />
-            <Route path="/overview" element={<ProtectedRoute><OverviewPage /></ProtectedRoute>} />
-            <Route path="/plans" element={<ProtectedRoute><PlansPage /></ProtectedRoute>} />
-            <Route path="/slots" element={<ProtectedRoute><SlotsPage /></ProtectedRoute>} />
-            <Route path="/payouts" element={<ProtectedRoute><PayoutsPage /></ProtectedRoute>} />
-            <Route path="/checkins" element={<ProtectedRoute><CheckinsPage /></ProtectedRoute>} />
             <Route path="/login" element={<LoginPage />} />
-            <Route path="/access" element={<ProtectedRoute><AccessPage /></ProtectedRoute>} />
-            <Route path="/profile" element={<ProtectedRoute><GymProfilePage /></ProtectedRoute>} />
+
+            <Route path="/" element={
+              <ProtectedRoute>
+                <FeatureGate routeKey="overview" enabledMap={cfg}>
+                  <OverviewPage />
+                </FeatureGate>
+              </ProtectedRoute>
+            }/>
+
+            <Route path="/overview" element={
+              <ProtectedRoute>
+                <FeatureGate routeKey="overview" enabledMap={cfg}>
+                  <OverviewPage />
+                </FeatureGate>
+              </ProtectedRoute>
+            }/>
+
+            <Route path="/plans" element={
+              <ProtectedRoute>
+                <FeatureGate routeKey="plans" enabledMap={cfg}>
+                  <PlansPage />
+                </FeatureGate>
+              </ProtectedRoute>
+            }/>
+
+            <Route path="/slots" element={
+              <ProtectedRoute>
+                <FeatureGate routeKey="slots" enabledMap={cfg}>
+                  <SlotsPage />
+                </FeatureGate>
+              </ProtectedRoute>
+            }/>
+
+            <Route path="/payouts" element={
+              <ProtectedRoute>
+                <FeatureGate routeKey="payouts" enabledMap={cfg}>
+                  <PayoutsPage />
+                </FeatureGate>
+              </ProtectedRoute>
+            }/>
+
+            <Route path="/checkins" element={
+              <ProtectedRoute>
+                <FeatureGate routeKey="checkins" enabledMap={cfg}>
+                  <CheckinsPage />
+                </FeatureGate>
+              </ProtectedRoute>
+            }/>
+
+            <Route path="/access" element={
+              <ProtectedRoute>
+                <FeatureGate routeKey="access" enabledMap={cfg}>
+                  <AccessPage />
+                </FeatureGate>
+              </ProtectedRoute>
+            }/>
+
+            <Route path="/profile" element={
+              <ProtectedRoute>
+                <FeatureGate routeKey="profile" enabledMap={cfg}>
+                  <GymProfilePage />
+                </FeatureGate>
+              </ProtectedRoute>
+            }/>
+
+            <Route path="*" element={<Navigate to="/overview" replace />} />
           </Routes>
         </Content>
       </Layout>
