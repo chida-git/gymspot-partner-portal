@@ -1,7 +1,7 @@
 import React, { useMemo } from 'react'
 import { Layout, Menu } from 'antd'
 import { Route, Routes, Navigate, useLocation, useNavigate, useSearchParams } from 'react-router-dom'
-import { AppstoreOutlined, DollarOutlined, ScheduleOutlined, ToolOutlined, SafetyOutlined, ProductOutlined } from '@ant-design/icons'
+import { DollarOutlined, ScheduleOutlined, ToolOutlined, SafetyOutlined, ProductOutlined, OrderedListOutlined, AppstoreAddOutlined, AreaChartOutlined } from '@ant-design/icons'
 import PlansPage from './pages/PlansPage.jsx'
 import SlotsPage from './pages/SlotsPage.jsx'
 import PayoutsPage from './pages/PayoutsPage.jsx'
@@ -12,12 +12,16 @@ import HeaderBar from './components/HeaderBar.jsx'
 import ProtectedRoute from './components/ProtectedRoute.jsx'
 import AccessPage from './pages/AccessPage.jsx'
 import GymProfilePage from './pages/GymProfilePage'
-import { useGymRoutesConfig } from './hooks/useGymRoutesConfig' // <-- usa la hook
+import { useGymRoutesConfig } from './hooks/useGymRoutesConfig'
+import CoursesPage from "./pages/CoursesPage.jsx";
+import ExtrasPage from './pages/ExtrasPage.jsx';
 
 const { Sider, Content } = Layout
 
 // Gate per bloccare l’accesso a rotte disattivate
 function FeatureGate({ routeKey, enabledMap, children }) {
+  console.log(enabledMap)
+  console.log(routeKey)
   if (!enabledMap?.[routeKey]) return <Navigate to="/overview" replace />
   return children
 }
@@ -35,6 +39,8 @@ export default function App() {
     if (p.startsWith('/checkins')) return 'checkins'
     if (p.startsWith('/access')) return 'access'
     if (p.startsWith('/profile')) return 'profile'
+    if (p.startsWith('/courses')) return 'courses'
+    if (p.startsWith('/extras')) return 'extras'
     return 'overview'
   }, [location.pathname])
 
@@ -44,9 +50,11 @@ export default function App() {
   const { config: cfg, loading: loadingCfg } = useGymRoutesConfig(gymId)
 
   const menuItems = [
-    { key: 'overview', icon: <AppstoreOutlined/>, label: 'Oggi' },
+    { key: 'overview', icon: <AreaChartOutlined/>, label: 'Oggi' },
     { key: 'profile',  icon: <ProductOutlined/>,  label: 'Profilo' },
     { key: 'plans',    icon: <ToolOutlined/>,     label: 'Piani & Prezzi' },
+    { key: 'courses',  icon: <OrderedListOutlined/>,   label: 'Corsi' },
+    { key: 'extras',   icon: <AppstoreAddOutlined/>,   label: 'Extra' },
     { key: 'slots',    icon: <ScheduleOutlined/>, label: 'Slot & Capienze' },
     { key: 'payouts',  icon: <DollarOutlined/>,   label: 'Payout' },
     { key: 'checkins', icon: <ScheduleOutlined/>, label: 'Check-in oggi' },
@@ -54,7 +62,6 @@ export default function App() {
   ]
 
   const visibleItems = loadingCfg ? menuItems : menuItems.filter(i => !!cfg[i.key])
-  console.log(visibleItems);
 
   return (
     <Layout style={{ minHeight: '100vh' }}>
@@ -99,6 +106,22 @@ export default function App() {
               <ProtectedRoute>
                 <FeatureGate routeKey="plans" enabledMap={cfg}>
                   <PlansPage />
+                </FeatureGate>
+              </ProtectedRoute>
+            }/>
+
+            <Route path="/courses" element={
+              <ProtectedRoute>
+                <FeatureGate routeKey="courses" enabledMap={cfg}>
+                  <CoursesPage />
+                </FeatureGate>
+              </ProtectedRoute>
+            }/>
+
+             <Route path="/extras" element={
+              <ProtectedRoute>
+                <FeatureGate routeKey="extras" enabledMap={cfg}>
+                  <ExtrasPage />
                 </FeatureGate>
               </ProtectedRoute>
             }/>

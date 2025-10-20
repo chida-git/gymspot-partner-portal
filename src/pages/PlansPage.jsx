@@ -8,12 +8,10 @@ import { getGymDetail, getPlans, updatePlan, createPlan, deletePlan } from '../s
 export default function PlansPage(){
   const [sp] = useSearchParams()
   const gymId = Number(sp.get('gym_id') || 1)
-  const [gym, setGym] = useState(null)
   const [plans, setPlans] = useState([])
   const [creating, setCreating] = useState(false)
   useEffect(() => { (async () => {
     try {
-      const d = await getGymDetail(gymId); setGym(d.gym)
       const p = await getPlans(gymId); setPlans(p)
     } catch (e) { message.error(e.message || 'Errore di rete') }
   })() }, [gymId])
@@ -21,7 +19,7 @@ export default function PlansPage(){
     try { await updatePlan(id, payload); const p = await getPlans(gymId); setPlans(p); message.success('Piano aggiornato') }
     catch (e) { message.error(e.message || 'Errore aggiornamento') }
   }
-  return (<div><GymHeader gym={gym} /><Card className="content-card" extra={<Button type='primary' onClick={()=>setCreating(true)}>Nuovo piano</Button>}>
+  return (<div><GymHeader gymId={gymId} /><Card className="content-card" extra={<Button type='primary' onClick={()=>setCreating(true)}>Nuovo piano</Button>}>
           <PlansTable plans={plans} onUpdate={onUpdate} onDelete={onDelete}/>
         </Card>
         <PlanCreateModal open={creating} onCancel={()=>setCreating(false)} onSubmit={onCreate}/></div>)

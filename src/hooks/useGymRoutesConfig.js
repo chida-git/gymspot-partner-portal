@@ -7,9 +7,10 @@ const DEFAULTS = {
   profile:  true,
   plans:    true,
   slots:    true,
-  payouts:  false,
+  payouts:  true,
   checkins: true,
   access:   true,
+  courses:  true
 }
 
 function normalize(raw) {

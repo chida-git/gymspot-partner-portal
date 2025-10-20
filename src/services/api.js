@@ -73,6 +73,85 @@ export async function getUserFull(idUser) {
   return data  // { id_user, user: {name,surname,mail}, subscription: {...} }
 }
 
+// --- EXTRAS ---
+// Lista di tutti gli extra disponibili
+export async function listExtras() {
+  const { data } = await api.get('/extras');
+  return data; // { data: [ {id,name,description,...}, ... ] }
+}
+
+// Crea un extra
+export async function createExtra(payload) {
+  // payload: { name: string, description?: string }
+  const { data } = await api.post('/extras', payload);
+  return data; // { data: {...} }
+}
+
+// Aggiorna un extra
+export async function updateExtra(extraId, payload) {
+  // payload: { name?: string, description?: string }
+  const { data } = await api.put(`/extras/${extraId}`, payload);
+  return data; // { data: {...} }
+}
+
+// Elimina un extra
+export async function deleteExtra(extraId) {
+  const { data } = await api.delete(`/extras/${extraId}`);
+  return data; // { data: { deleted: id } }
+}
+
+// --- GYM ↔ EXTRAS ---
+// Lista degli extra associati a una palestra
+export async function getGymExtras(gymId) {
+  const { data } = await api.get(`/extras_gym/${gymId}/extras`);
+  return data; // { data: [ {id,name,description}, ... ] }
+}
+
+// Aggiunge (merge/idempotente) uno o più extra alla palestra
+export async function addGymExtras(gymId, extraIds) {
+  // extraIds: number[]
+  const { data } = await api.post(`/extras_gym/${gymId}/extras`, { extraIds });
+  return data; // { data: [ ...lista aggiornata... ] }
+}
+
+// Sostituisce completamente la lista degli extra per la palestra
+export async function setGymExtras(gymId, extraIds) {
+  // extraIds: number[] (può essere vuoto [])
+  const { data } = await api.put(`/extras_gym/${gymId}/extras`, { extraIds });
+  return data; // { data: [ ...lista aggiornata... ] }
+}
+
+// Rimuove un singolo extra dalla palestra
+export async function removeGymExtra(gymId, extraId) {
+  const { data } = await api.delete(`/extras_gym/${gymId}/extras/${extraId}`);
+  return data; // { data: { gymId, extraId } }
+}
+
+
+export const getCourseTypes = (gymId) =>
+  api.get(`/course/${gymId}/course-types`);
+
+export const getWeeklySlots = (gymId) =>
+  api.get(`/weekly_slots/${gymId}/weekly-slots`);
+
+export const getSchedule = (gymId, { from, to, courseTypeId }) =>
+  api.get(`/schedule/${gymId}/schedule`, { params: { from, to, courseTypeId } });
+
+// --- Corsi: CREATE ---
+export const createCourseType = (gymId, payload) =>
+  api.post(`/course/${gymId}/course-types`, payload);
+
+export const createWeeklySlot = (gymId, payload) =>
+  api.post(`/weekly_slots/${gymId}/weekly-slots`, payload);
+
+// UPDATE: tipo corso (soft-delete possibile)
+export const updateCourseType = (id, payload) =>
+  api.patch(`/course/course-types/${id}`, payload);
+
+// UPDATE: weekly slot
+export const updateWeeklySlot = (id, payload) =>
+  api.patch(`/weekly_slots/weekly-slots/${id}`, payload);
+
 // --- PROFILE ---
 export async function getGymProfile(gymId) {
   const rs = await fetch(`${import.meta.env.VITE_API_BASE}/gyms/${gymId}/profile`, {
