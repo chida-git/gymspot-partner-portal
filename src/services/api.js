@@ -20,6 +20,9 @@ function goLogin() {
   window.location.href = `/login?gym_id=${gymId}`
 }
 
+function ok(msg){ message.success(msg) }
+function ko(err, fallback='Errore'){ console.error(err); message.error(err?.response?.data?.message || fallback) }
+
 api.interceptors.response.use(
   (res) => res,
   (error) => {
@@ -72,6 +75,190 @@ export async function getUserFull(idUser) {
   const { data } = await api.get(`/partner/access/users/${idUser}/full`)
   return data  // { id_user, user: {name,surname,mail}, subscription: {...} }
 }
+
+export async function syncMarketingContacts(gymId){
+  try{
+    const { data } = await api.post('/newsletter/marketing/contacts/sync', { gym_id: gymId })
+    ok(`Contatti sincronizzati: ${data.synced}`)
+    return data
+  }catch(e){ ko(e, 'Sync contatti fallita'); throw e }
+}
+
+// --- Templates
+export async function getTemplates(gymId, { limit=50, offset=0 }={}){
+  const { data } = await api.get('/newsletter/marketing/templates', { params: { gym_id: gymId, limit, offset } })
+  return data
+}
+export async function createTemplate(payload){
+  const { data } = await api.post('/newsletter/marketing/templates', payload)
+  ok('Template creato')
+  return data
+}
+
+export async function getMarketingContacts(gymId, { search='', subscribed, limit=50, offset=0 }={}){
+  const params = { gym_id: gymId, limit, offset }
+  if (search) params.search = search
+  if (typeof subscribed !== 'undefined') params.subscribed = subscribed ? 1 : 0
+  const { data } = await api.get('/newsletter/marketing/contacts', { params })
+  return data
+}
+
+export async function setCampaignRecipients(campaignId, contactIds, { replace=false }={}){
+  const { data } = await api.post(`/newsletter/marketing/campaigns/${campaignId}/recipients`, {
+    contact_ids: contactIds, replace
+  })
+  return data
+}
+
+// --- Campaigns
+export async function getCampaigns(gymId, { status, limit=50, offset=0 }={}){
+  const { data } = await api.get('/newsletter/marketing/campaigns', { params: { gym_id: gymId, status, limit, offset } })
+  return data
+}
+export async function createCampaign(payload){
+  const { data } = await api.post('/newsletter/marketing/campaigns', payload)
+  ok('Campagna creata')
+  return data
+}
+export async function markCampaignReady(campaignId){
+  const { data } = await api.post(`/newsletter/marketing/campaigns/${campaignId}/ready`)
+  ok('Campagna pronta: invio automatico avviato')
+  return data
+}
+export async function updateCampaign(campaignId, payload){
+  const { data } = await api.patch(`/newsletter/marketing/campaigns/${campaignId}`, payload)
+  ok('Campagna aggiornata')
+  return data
+}
+
+// --- Offers
+export async function getOffers(gymId, { active_only=true, limit=100, offset=0 }={}){
+  const { data } = await api.get('/newsletter/offers', { params: { gym_id: gymId, active_only, limit, offset } })
+  return data
+}
+
+export async function attachOffersToCampaign(campaignId, offerIds){
+  const { data } = await api.post(`/newsletter/marketing/campaigns/${campaignId}/offers`, { offer_ids: offerIds })
+  ok('Offerte collegate')
+  return data
+}
+
+// --
+
+// === GYM CAPACITY / HALLS ===
+export async function getGymCapacityConfig(gymId) {
+  const { data } = await api.get('/capacity/config', { params: { gym_id: gymId } });
+  return data;
+}
+export async function updateGymCapacityConfig(gymId, payload) {
+  const { data } = await api.patch(`/capacity/config/${gymId}`, payload);
+  return data;
+}
+export async function getGymHalls(gymId) {
+  const { data } = await api.get('/capacity/halls', { params: { gym_id: gymId } });
+  return data;
+}
+export async function createGymHall(payload) {
+  const { data } = await api.post('/capacity/halls', payload);
+  return data;
+}
+export async function updateGymHall(id, payload) {
+  const { data } = await api.patch(`/capacity/halls/${id}`, payload);
+  return data;
+}
+export async function deleteGymHall(id) {
+  await api.delete(`/capacity/halls/${id}`);
+  return true;
+}
+
+// ---------- EQUIPMENT: CATEGORIES ----------
+export async function getEquipmentCategories(params) {
+  const { data } = await api.get('/equipment/categories', { params });
+  return data;
+}
+export async function createEquipmentCategory(payload) {
+  const { data } = await api.post('/equipment/categories', payload);
+  return data;
+}
+export async function updateEquipmentCategory(id, payload) {
+  const { data } = await api.patch(`/equipment/categories/${id}`, payload);
+  return data;
+}
+export async function deleteEquipmentCategory(id) {
+  await api.delete(`/equipment/categories/${id}`);
+  return true;
+}
+
+// ---------- EQUIPMENT: MODELS ----------
+export async function getEquipmentModels(params) {
+  const { data } = await api.get('/equipment/models', { params });
+  return data;
+}
+export async function createEquipmentModel(payload) {
+  const { data } = await api.post('/equipment/models', payload); // { ... , specs: [{spec_key, spec_value}] }
+  return data;
+}
+export async function updateEquipmentModel(id, payload) {
+  const { data } = await api.patch(`/equipment/models/${id}`, payload);
+  return data;
+}
+export async function deleteEquipmentModel(id) {
+  await api.delete(`/equipment/models/${id}`);
+  return true;
+}
+export async function getEquipmentModelSpecs(modelId) {
+  const { data } = await api.get(`/equipment/models/${modelId}/specs`);
+  return data;
+}
+export async function replaceEquipmentModelSpecs(modelId, specsArray) {
+  const { data } = await api.put(`/equipment/models/${modelId}/specs`, specsArray);
+  return data;
+}
+
+// ---------- EQUIPMENT: ASSETS ----------
+export async function getEquipmentAssets(params) {
+  const { data } = await api.get('/equipment/assets', { params });
+  return data;
+}
+export async function createEquipmentAsset(payload) {
+  const { data } = await api.post('/equipment/assets', payload);
+  return data;
+}
+export async function updateEquipmentAsset(id, payload) {
+  const { data } = await api.patch(`/equipment/assets/${id}`, payload);
+  return data;
+}
+export async function deleteEquipmentAsset(id) {
+  await api.delete(`/equipment/assets/${id}`);
+  return true;
+}
+
+// ---------- EQUIPMENT: STOCK ----------
+export async function getEquipmentStock(params) {
+  const { data } = await api.get('/equipment/stock', { params });
+  return data;
+}
+export async function createEquipmentStock(payload) {
+  const { data } = await api.post('/equipment/stock', payload);
+  return data;
+}
+export async function updateEquipmentStock(id, payload) {
+  const { data } = await api.patch(`/equipment/stock/${id}`, payload);
+  return data;
+}
+export async function deleteEquipmentStock(id) {
+  await api.delete(`/equipment/stock/${id}`);
+  return true;
+}
+export async function getEquipmentStockSpecs(stockId) {
+  const { data } = await api.get(`/equipment/stock/${stockId}/specs`);
+  return data;
+}
+export async function replaceEquipmentStockSpecs(stockId, specsArray) {
+  const { data } = await api.put(`/equipment/stock/${stockId}/specs`, specsArray);
+  return data;
+}
+
 
 // --- EXTRAS ---
 // Lista di tutti gli extra disponibili

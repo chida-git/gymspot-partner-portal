@@ -10,7 +10,10 @@ const DEFAULTS = {
   payouts:  true,
   checkins: true,
   access:   true,
-  courses:  true
+  courses:  true,
+  equipment:true,
+  capacity: true,
+  newsletter: true,
 }
 
 function normalize(raw) {

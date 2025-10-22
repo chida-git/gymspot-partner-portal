@@ -1,7 +1,7 @@
 import React, { useMemo } from 'react'
 import { Layout, Menu } from 'antd'
 import { Route, Routes, Navigate, useLocation, useNavigate, useSearchParams } from 'react-router-dom'
-import { DollarOutlined, ScheduleOutlined, ToolOutlined, SafetyOutlined, ProductOutlined, OrderedListOutlined, AppstoreAddOutlined, AreaChartOutlined } from '@ant-design/icons'
+import { DollarOutlined, ScheduleOutlined, ToolOutlined, SafetyOutlined, ProductOutlined, OrderedListOutlined, AppstoreAddOutlined, AreaChartOutlined, TagsOutlined, FullscreenOutlined, MailOutlined } from '@ant-design/icons'
 import PlansPage from './pages/PlansPage.jsx'
 import SlotsPage from './pages/SlotsPage.jsx'
 import PayoutsPage from './pages/PayoutsPage.jsx'
@@ -15,6 +15,9 @@ import GymProfilePage from './pages/GymProfilePage'
 import { useGymRoutesConfig } from './hooks/useGymRoutesConfig'
 import CoursesPage from "./pages/CoursesPage.jsx";
 import ExtrasPage from './pages/ExtrasPage.jsx';
+import EquipmentPage from './pages/EquipmentPage.jsx';
+import GymStructurePage from './pages/GymStructurePage.jsx';
+import NewsletterPage from './pages/NewsletterPage.jsx';
 
 const { Sider, Content } = Layout
 
@@ -41,6 +44,9 @@ export default function App() {
     if (p.startsWith('/profile')) return 'profile'
     if (p.startsWith('/courses')) return 'courses'
     if (p.startsWith('/extras')) return 'extras'
+    if (p.startsWith('/equipment')) return 'equipment'
+    if (p.startsWith('/capacity')) return 'capacity'
+    if (p.startsWith('/newsletter')) return 'newsletter'
     return 'overview'
   }, [location.pathname])
 
@@ -52,12 +58,15 @@ export default function App() {
   const menuItems = [
     { key: 'overview', icon: <AreaChartOutlined/>, label: 'Oggi' },
     { key: 'profile',  icon: <ProductOutlined/>,  label: 'Profilo' },
-    { key: 'plans',    icon: <ToolOutlined/>,     label: 'Piani & Prezzi' },
+    { key: 'capacity',   icon: <FullscreenOutlined/>,   label: 'Capienza' },
+    { key: 'plans',    icon: <TagsOutlined/>,     label: 'Piani & Prezzi' },
+    { key: 'equipment',    icon: <ToolOutlined/>,     label: 'Attrezzatura' },
     { key: 'courses',  icon: <OrderedListOutlined/>,   label: 'Corsi' },
     { key: 'extras',   icon: <AppstoreAddOutlined/>,   label: 'Extra' },
     { key: 'slots',    icon: <ScheduleOutlined/>, label: 'Slot & Capienze' },
     { key: 'payouts',  icon: <DollarOutlined/>,   label: 'Payout' },
     { key: 'checkins', icon: <ScheduleOutlined/>, label: 'Check-in oggi' },
+    { key: 'newsletter',    icon: <MailOutlined/>,     label: 'Newsletter' },
     { key: 'access',   icon: <SafetyOutlined/>,   label: 'Validazione accesso' }
   ]
 
@@ -102,10 +111,26 @@ export default function App() {
               </ProtectedRoute>
             }/>
 
+            <Route path="/capacity" element={
+              <ProtectedRoute>
+                <FeatureGate routeKey="capacity" enabledMap={cfg}>
+                  <GymStructurePage />
+                </FeatureGate>
+              </ProtectedRoute>
+            }/>
+
             <Route path="/plans" element={
               <ProtectedRoute>
                 <FeatureGate routeKey="plans" enabledMap={cfg}>
                   <PlansPage />
+                </FeatureGate>
+              </ProtectedRoute>
+            }/>
+
+            <Route path="/equipment" element={
+              <ProtectedRoute>
+                <FeatureGate routeKey="equipment" enabledMap={cfg}>
+                  <EquipmentPage />
                 </FeatureGate>
               </ProtectedRoute>
             }/>
@@ -154,6 +179,14 @@ export default function App() {
               <ProtectedRoute>
                 <FeatureGate routeKey="access" enabledMap={cfg}>
                   <AccessPage />
+                </FeatureGate>
+              </ProtectedRoute>
+            }/>
+
+            <Route path="/newsletter" element={
+              <ProtectedRoute>
+                <FeatureGate routeKey="newsletter" enabledMap={cfg}>
+                  <NewsletterPage />
                 </FeatureGate>
               </ProtectedRoute>
             }/>
