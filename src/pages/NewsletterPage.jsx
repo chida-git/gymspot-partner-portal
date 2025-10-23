@@ -1,12 +1,13 @@
 import React, { useEffect, useMemo, useState } from 'react'
-import { Button, Card, Col, DatePicker, Empty, Form, Input, Modal, Row, Select, Space, Table, Tag, Typography } from 'antd'
+import { Button, Card, Col, DatePicker, Empty, Form, Input, Modal, Row, Select, Space, Table, Tag, Typography, Popconfirm } from 'antd'
 import dayjs from 'dayjs'
 import {
   syncMarketingContacts,
   getTemplates, createTemplate,
   getCampaigns, createCampaign, markCampaignReady, updateCampaign,
   getOffers, attachOffersToCampaign,
-  getMarketingContacts, setCampaignRecipients
+  getMarketingContacts, setCampaignRecipients,
+  addContactFromUser, getUsers, createExternalContact, deleteCampaign
 } from '../services/api'
 
 const { Title, Text } = Typography
@@ -69,10 +70,10 @@ function CampaignModal({ open, onClose, gymId, templates, onCreated }){
         name: v.name,
         subject: v.subject,
         from_name: v.from_name || 'GymSpot',
-        from_email: 'noreply@gymspot.it', // fisso Aruba
+        from_email: 'info@gymspot.it', // fisso Aruba
         template_id: v.template_id || null,
         content_html: v.content_html || null,
-        scheduled_at: v.scheduled_at ? v.scheduled_at.toISOString() : null
+        scheduled_at: v.scheduled_at ? v.scheduled_at.format('YYYY-MM-DD HH:mm:ss') : null
       }
       await createCampaign(payload)
       onCreated?.()
@@ -173,6 +174,151 @@ function OfferAttachModal({ open, onClose, gymId, campaign, onAttached }){
   )
 }
 
+function AddExternalContactModal({ open, onClose, gymId, onCreated }) {
+  const [form] = Form.useForm()
+  const [loading, setLoading] = useState(false)
+
+  const onSubmit = async () => {
+    const v = await form.validateFields()
+    setLoading(true)
+    try {
+      await createExternalContact({ gym_id: gymId, ...v })
+      onCreated?.()
+      form.resetFields()
+      onClose()
+    } finally { setLoading(false) }
+  }
+
+  return (
+    <Modal title="Nuovo contatto esterno" open={open} onCancel={onClose} onOk={onSubmit} confirmLoading={loading}>
+      <Form form={form} layout="vertical" initialValues={{ subscribed: true }}>
+        <Form.Item name="email" label="Email" rules={[{ required: true, type: 'email' }]}><Input /></Form.Item>
+        <Form.Item name="full_name" label="Nome completo"><Input /></Form.Item>
+        <Form.Item name="phone" label="Telefono"><Input /></Form.Item>
+        <Form.Item name="subscribed" label="Opt-in" rules={[{ required: true }]}>
+          <Select options={[{ label: 'Sì', value: true }, { label: 'No', value: false }]} />
+        </Form.Item>
+        <Form.Item name="tags" label="Tag (opzionale)">
+          <Select mode="tags" tokenSeparators={[',']} placeholder="promo, lead, ..." />
+        </Form.Item>
+      </Form>
+    </Modal>
+  )
+}
+
+function AddFromUsersModal({ open, onClose, gymId, onCreated }) {
+  const [search, setSearch] = useState('')
+  const [loading, setLoading] = useState(false)
+  const [rows, setRows] = useState([])
+  const [selected, setSelected] = useState([])
+
+  useEffect(() => { if (open) load() }, [open]) // carica all'apertura
+  const load = async () => {
+    setLoading(true)
+    try { setRows(await getUsers(gymId, { search, limit: 100 })) }
+    finally { setLoading(false) }
+  }
+
+  const columns = [
+    { title: 'ID', dataIndex: 'id', width: 70 },
+    { title: 'Nome', dataIndex: 'full_name' },
+    { title: 'Email', dataIndex: 'email' },
+    { title: 'Telefono', dataIndex: 'phone', width: 140 },
+    { title: 'Stato', dataIndex: 'status', width: 110, render: s => <Tag>{s}</Tag> },
+  ]
+
+  const onSubmit = async () => {
+    if (!selected.length) return onClose()
+    setLoading(true)
+    try {
+      await Promise.all(selected.map(uid =>
+        addContactFromUser({ gym_id: gymId, user_id: uid, subscribed: true })
+      ))
+      onCreated?.()
+      setSelected([])
+      onClose()
+    } finally { setLoading(false) }
+  }
+
+  return (
+    <Modal title="Aggiungi contatti dai tuoi utenti" open={open} onCancel={onClose} onOk={onSubmit} confirmLoading={loading} width={900}>
+      <Space style={{ marginBottom: 12 }}>
+        <Input.Search placeholder="Cerca nome/email/telefono" allowClear value={search}
+          onChange={e => setSearch(e.target.value)} onSearch={load} style={{ width: 320 }} />
+        <Button onClick={load}>Cerca</Button>
+      </Space>
+      <Table
+        rowKey="id"
+        dataSource={rows}
+        columns={columns}
+        size="small"
+        loading={loading}
+        pagination={{ pageSize: 8 }}
+        rowSelection={{ selectedRowKeys: selected, onChange: setSelected }}
+      />
+    </Modal>
+  )
+}
+
+function CampaignEditModal({ open, onClose, gymId, templates, record, onUpdated }){
+  const [form] = Form.useForm()
+  const [loading, setLoading] = useState(false)
+
+  useEffect(() => {
+    if (open && record){
+      form.setFieldsValue({
+        name: record.name,
+        subject: record.subject,
+        from_name: record.from_name,
+        template_id: record.template_id || undefined,
+        content_html: record.content_html || undefined,
+        scheduled_at: record.scheduled_at ? dayjs(record.scheduled_at) : null
+      })
+    }
+  }, [open, record])
+
+  const onSubmit = async () => {
+    const v = await form.validateFields()
+    setLoading(true)
+    try{
+      const payload = {
+        name: v.name,
+        subject: v.subject,
+        from_name: v.from_name,
+        template_id: v.template_id || null,
+        content_html: v.content_html || null,
+        scheduled_at: v.scheduled_at ? v.scheduled_at.format('YYYY-MM-DD HH:mm:ss') : null
+      }
+      await updateCampaign(record.id, payload)
+      onUpdated?.()
+      onClose()
+    } finally { setLoading(false) }
+  }
+
+  return (
+    <Modal title={`Modifica campagna #${record?.id}`} open={open} onCancel={onClose} onOk={onSubmit} confirmLoading={loading} width={900}>
+      <Form form={form} layout="vertical">
+        <Form.Item name="name" label="Nome" rules={[{ required:true }]}><Input /></Form.Item>
+        <Row gutter={16}>
+          <Col span={12}><Form.Item name="subject" label="Oggetto" rules={[{ required:true }]}><Input /></Form.Item></Col>
+          <Col span={12}><Form.Item name="from_name" label="Mittente (nome)"><Input /></Form.Item></Col>
+        </Row>
+        <Form.Item name="template_id" label="Template">
+          <Select allowClear placeholder="Seleziona un template">
+            {templates.map(t => <Option key={t.id} value={t.id}>{t.name}</Option>)}
+          </Select>
+        </Form.Item>
+        <Form.Item name="content_html" label="HTML (se non usi template)">
+          <Input.TextArea rows={8} />
+        </Form.Item>
+        <Form.Item name="scheduled_at" label="Programma invio (opzionale)">
+          <DatePicker showTime style={{ width:'100%' }} />
+        </Form.Item>
+      </Form>
+    </Modal>
+  )
+}
+
 // ---------- Pagina principale ----------
 export default function NewsletterPage(){
   // recupero gymId da contesto/storage come fai altrove
@@ -194,6 +340,80 @@ export default function NewsletterPage(){
   const [selectedContactKeys, setSelectedContactKeys] = useState([])
   const [currentCampaignId, setCurrentCampaignId] = useState(null)
 
+  const [addExtOpen, setAddExtOpen] = useState(false)
+  const [addFromUsersOpen, setAddFromUsersOpen] = useState(false)
+  const [onlyExternal, setOnlyExternal] = useState(false)
+  const [editOpen, setEditOpen] = useState(false)
+const [editing, setEditing] = useState(null)
+
+function openEdit(row){
+  setEditing(row)
+  setEditOpen(true)
+}
+
+async function handleDelete(id){
+  await deleteCampaign(id)   // vedi API sotto
+  fetchAll()
+}
+
+const campaignColumns = [
+  { title: 'ID', dataIndex: 'id', width: 80, fixed: 'left' },
+  {
+    title: 'Nome',
+    dataIndex: 'name',
+    width: 260,
+    render: (v) => (
+      <Text ellipsis={{ tooltip: v }} style={{ maxWidth: 240, display: 'inline-block' }}>
+        {v || '-'}
+      </Text>
+    )
+  },
+  {
+    title: 'Stato',
+    dataIndex: 'status',
+    width: 110,
+    render: s => {
+      const color = s==='sent'?'green': s==='sending'?'blue': s==='ready'?'gold': 'default'
+      return <Tag color={color}>{s}</Tag>
+    }
+  },
+  {
+    title: 'Schedulata',
+    dataIndex: 'scheduled_at',
+    width: 170,
+    render: v => v ? dayjs(v).format('YYYY-MM-DD HH:mm') : <Text type="secondary">-</Text>
+  },
+  {
+    title: 'Creata',
+    dataIndex: 'created_at',
+    width: 170,
+    render: v => v ? dayjs(v).format('YYYY-MM-DD HH:mm') : '-'
+  },
+  {
+    title: 'Azioni',
+    key: 'actions',
+    fixed: 'right',
+    width: 320,
+    render: (_, row) => (
+      <Space>
+        <Button onClick={() => handleAttach(row)}>Collega offerte</Button>
+        <Button onClick={() => openEdit(row)}>Modifica</Button>
+        <Popconfirm
+          title="Elimina campagna?"
+          description="Questa azione rimuove la campagna e i destinatari collegati."
+          onConfirm={() => handleDelete(row.id)}
+          okText="Elimina" cancelText="Annulla"
+        >
+          <Button danger>Elimina</Button>
+        </Popconfirm>
+        {row.status === 'draft' && (
+          <Button type="primary" onClick={() => handleReady(row)}>OK (Ready)</Button>
+        )}
+      </Space>
+    )
+  }
+]
+
   const fetchAll = async () => {
     setLoading(true)
     try{
@@ -211,10 +431,11 @@ export default function NewsletterPage(){
     const fetchContacts = async () => {
     setContactsLoading(true)
     try{
-      const list = await getMarketingContacts(gymId, {
-        search: contactSearch,
-        subscribed: contactOnlySubscribed
-      })
+const list = await getMarketingContacts(gymId, {
+  search: contactSearch,
+  only_subscribed: contactOnlySubscribed ? 1 : 0,
+  only_external: onlyExternal ? 1 : undefined
+})
       setContacts(list)
     } finally { setContactsLoading(false) }
   }
@@ -312,7 +533,7 @@ export default function NewsletterPage(){
         </Row>
       </Card>
 
-            <Card
+      <Card
         title="Contatti Marketing"
         extra={
           <Space>
@@ -340,7 +561,18 @@ export default function NewsletterPage(){
               allowClear
               options={campaigns.map(c=>({ label:`${c.name} (#${c.id})`, value:c.id }))}
             />
+<Select
+  value={onlyExternal ? 'external' : 'all'}
+  onChange={(v)=>{ setOnlyExternal(v === 'external'); fetchContacts() }}
+  options={[
+    { label:'Tutti i contatti', value:'all' },
+    { label:'Solo esterni', value:'external' }
+  ]}
+  style={{ width: 160 }}
+/>
             <Button onClick={fetchContacts}>Refresh</Button>
+            <Button onClick={() => setAddFromUsersOpen(true)}>Aggiungi da Utenti</Button>
+           <Button type="primary" onClick={() => setAddExtOpen(true)}>Nuovo contatto esterno</Button>
           </Space>
         }
       >
@@ -397,13 +629,15 @@ export default function NewsletterPage(){
 
         <Col span={14}>
           <Card title="Campagne" extra={<Button onClick={fetchAll} loading={loading}>Refresh</Button>} bodyStyle={{ paddingTop: 0 }}>
-            <Table
-              rowKey="id"
-              dataSource={campaigns}
-              columns={columns}
-              loading={loading}
-              pagination={{ pageSize: 8 }}
-            />
+<Table
+  rowKey="id"
+  dataSource={campaigns}
+  columns={campaignColumns}
+  loading={loading}
+  pagination={{ pageSize: 8 }}
+  tableLayout="fixed"
+  scroll={{ x: 1100 }}
+/>
           </Card>
         </Col>
       </Row>
@@ -429,6 +663,28 @@ export default function NewsletterPage(){
         campaign={selectedCampaign}
         onAttached={fetchAll}
       />
+      <AddExternalContactModal
+  open={addExtOpen}
+  onClose={() => setAddExtOpen(false)}
+  gymId={gymId}
+  onCreated={fetchContacts}
+/>
+
+<AddFromUsersModal
+  open={addFromUsersOpen}
+  onClose={() => setAddFromUsersOpen(false)}
+  gymId={gymId}
+  onCreated={() => { fetchContacts(); fetchAll(); }}
+/>
+
+<CampaignEditModal
+  open={editOpen}
+  onClose={() => setEditOpen(false)}
+  gymId={gymId}
+  templates={templates}
+  record={editing}
+  onUpdated={fetchAll}
+/>
     </Space>
   )
 }

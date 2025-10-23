@@ -95,10 +95,10 @@ export async function createTemplate(payload){
   return data
 }
 
-export async function getMarketingContacts(gymId, { search='', subscribed, limit=50, offset=0 }={}){
-  const params = { gym_id: gymId, limit, offset }
+export async function getMarketingContacts(gymId, { search='', only_subscribed=1, only_external, limit=50, offset=0 } = {}) {
+  const params = { gym_id: gymId, limit, offset, only_subscribed }
   if (search) params.search = search
-  if (typeof subscribed !== 'undefined') params.subscribed = subscribed ? 1 : 0
+  if (only_external === true || only_external === 1) params.only_external = 1
   const { data } = await api.get('/newsletter/marketing/contacts', { params })
   return data
 }
@@ -107,6 +107,27 @@ export async function setCampaignRecipients(campaignId, contactIds, { replace=fa
   const { data } = await api.post(`/newsletter/marketing/campaigns/${campaignId}/recipients`, {
     contact_ids: contactIds, replace
   })
+  return data
+}
+
+export async function createExternalContact(payload){
+  // { gym_id, email, full_name?, phone?, tags?, subscribed? }
+  const { data } = await api.post('/newsletter/marketing/contacts/external', payload)
+  message.success('Contatto esterno salvato')
+  return data
+}
+
+export async function addContactFromUser({ gym_id, user_id, subscribed = true, tags = [] }){
+  // inserisce/aggiorna il contatto collegato allo user
+  const { data } = await api.post('/newsletter/marketing/contacts', { gym_id, user_id, subscribed, tags })
+  message.success('Contatto aggiunto da utenti')
+  return data
+}
+
+export async function getUsers(gymId, { search = '', limit = 50, offset = 0 } = {}){
+  const params = { gym_id: gymId, limit, offset }
+  if (search) params.search = search
+  const { data } = await api.get('/users/users', { params })
   return data
 }
 
@@ -128,6 +149,12 @@ export async function markCampaignReady(campaignId){
 export async function updateCampaign(campaignId, payload){
   const { data } = await api.patch(`/newsletter/marketing/campaigns/${campaignId}`, payload)
   ok('Campagna aggiornata')
+  return data
+}
+
+export async function deleteCampaign(campaignId){
+  const { data } = await api.delete(`/newsletter/marketing/campaigns/${campaignId}`)
+  message.success('Campagna eliminata')
   return data
 }
 
