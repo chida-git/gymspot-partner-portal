@@ -14,6 +14,7 @@ const DEFAULTS = {
   equipment:true,
   capacity: true,
   newsletter: true,
+  extras: true
 }
 
 function normalize(raw) {
