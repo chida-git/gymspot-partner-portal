@@ -128,35 +128,35 @@ const ExtrasPage = ({ gymId: gymIdProp }) => {
       key: "description",
       ellipsis: true,
     },
-    {
-      title: "Azioni",
-      key: "actions",
-      width: 140,
-      render: (_, record) => (
-        <Space>
-          <Button
-            size="small"
-            icon={<EditOutlined />}
-            onClick={() => {
-              setEditing(record);
-              form.setFieldsValue({
-                name: record.name,
-                description: record.description,
-              });
-              setModalVisible(true);
-            }}
-          />
-          <Popconfirm
-            title="Eliminare questo extra?"
-            okText="Sì"
-            cancelText="No"
-            onConfirm={() => onDeleteExtra(record.id)}
-          >
-            <Button size="small" icon={<DeleteOutlined />} danger />
-          </Popconfirm>
-        </Space>
-      ),
-    },
+    // {
+    //   title: "Azioni",
+    //   key: "actions",
+    //   width: 140,
+    //   render: (_, record) => (
+    //     <Space>
+    //       <Button
+    //         size="small"
+    //         icon={<EditOutlined />}
+    //         onClick={() => {
+    //           setEditing(record);
+    //           form.setFieldsValue({
+    //             name: record.name,
+    //             description: record.description,
+    //           });
+    //           setModalVisible(true);
+    //         }}
+    //       />
+    //       <Popconfirm
+    //         title="Eliminare questo extra?"
+    //         okText="Sì"
+    //         cancelText="No"
+    //         onConfirm={() => onDeleteExtra(record.id)}
+    //       >
+    //         <Button size="small" icon={<DeleteOutlined />} danger />
+    //       </Popconfirm>
+    //     </Space>
+    //   ),
+    // },
   ];
 
   return (
