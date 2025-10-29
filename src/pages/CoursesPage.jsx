@@ -438,6 +438,7 @@ async function toggleCourseStatus(row, nextStatus) {
     onFinish={async (values) => {
       try {
         await updateWeeklySlot(editingSlot.id, {
+          gymId: gymId,
           courseTypeId: values.courseTypeId,
           weekday: values.weekday,
           startTime: values.startTime.format("HH:mm"),
