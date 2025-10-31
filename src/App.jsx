@@ -23,8 +23,6 @@ const { Sider, Content } = Layout
 
 // Gate per bloccare l’accesso a rotte disattivate
 function FeatureGate({ routeKey, enabledMap, children }) {
-  console.log(enabledMap)
-  console.log(routeKey)
   if (!enabledMap?.[routeKey]) return <Navigate to="/overview" replace />
   return children
 }

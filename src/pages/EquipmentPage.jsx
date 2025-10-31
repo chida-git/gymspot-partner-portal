@@ -50,13 +50,16 @@ function CategoriesTab() {
   const [form] = Form.useForm();
   const { loading, data, run } = useAsync(getEquipmentCategories, []);
 
+    const { user } = useAuth?.() || {};
+  const gymId = user?.gym_id || 1;
+
   const reload = async () => {
-    await run({ search, limit: 200 });
+    await run({ search, limit: 200, gym_id: gymId });
   };
   useEffect(() => { reload(); }, []); // initial
 
   const openCreate = () => { setEditing(null); form.resetFields(); setModalOpen(true); };
-  const openEdit = (row) => { setEditing(row); form.setFieldsValue({ name: row.name, parent_id: row.parent_id }); setModalOpen(true); };
+  const openEdit = (row) => { setEditing(row); form.setFieldsValue({ name: row.name, parent_id: row.parent_id, gym_id: gymId }); setModalOpen(true); };
 
   const onSubmit = async () => {
     const v = await form.validateFields();
@@ -64,7 +67,8 @@ function CategoriesTab() {
       await updateEquipmentCategory(editing.id, v);
       message.success('Categoria aggiornata');
     } else {
-      await createEquipmentCategory(v);
+      const payload = { ...v, gym_id: gymId };
+      await createEquipmentCategory(payload);
       message.success('Categoria creata');
     }
     setModalOpen(false);
@@ -148,16 +152,20 @@ function ModelsTab() {
   const categories = useAsync(getEquipmentCategories, []);
   const models = useAsync(getEquipmentModels, []);
 
+  const { user } = useAuth?.() || {};
+  const gymId = user?.gym_id || 1;
+
   const reload = async () => {
     await models.run({
       search: filters.search || undefined,
       category_id: filters.category_id || undefined,
       is_track_per_item: filters.is_track_per_item ?? undefined,
-      limit: 100
+      limit: 100,
+      gym_id: gymId
     });
   };
 
-  useEffect(() => { categories.run({ limit: 200 }); reload(); }, []); // init
+  useEffect(() => { categories.run({ limit: 200, gym_id: gymId }); reload(); }, []); // init
 
   const openCreate = () => {
     setEditing(null);
@@ -178,7 +186,12 @@ function ModelsTab() {
       is_track_per_item: !!row.is_track_per_item
     });
     const specs = await getEquipmentModelSpecs(row.id);
-    form.setFieldsValue({ specs: (specs?.data || []).map(s => ({ spec_key: s.spec_key, spec_value: s.spec_value })) });
+const flatSpecs = (specs?.data || [])
+    .flat()
+    .filter(s => s && s.spec_key)
+    .map(s => ({ spec_key: s.spec_key, spec_value: s.spec_value }));
+
+  form.setFieldsValue({ specs: flatSpecs });
     setDrawerOpen(true);
   };
 
@@ -192,6 +205,7 @@ function ModelsTab() {
       description: v.description,
       photo_url: v.photo_url,
       is_track_per_item: v.is_track_per_item,
+      gym_id: gymId
     };
     if (!editing) {
       payload.specs = (v.specs || []).filter(s => s?.spec_key && s?.spec_value);
@@ -199,7 +213,11 @@ function ModelsTab() {
       message.success('Modello creato');
     } else {
       await updateEquipmentModel(editing.id, payload);
-      await replaceEquipmentModelSpecs(editing.id, (v.specs || []).filter(s => s?.spec_key && s?.spec_value));
+          const specsPayload = {
+      specs: (v.specs || []).filter(s => s?.spec_key && s?.spec_value),
+      gym_id: gymId,
+    };
+      await replaceEquipmentModelSpecs(editing.id, specsPayload);
       message.success('Modello aggiornato');
     }
     setDrawerOpen(false);
@@ -326,7 +344,7 @@ function ModelsTab() {
  * TAB 3 — ASSET
  * ============================ */
 function AssetsTab() {
-  const { user } = useAuth?.() || {}; // se non hai useAuth, rimpiazza con il tuo context
+  const { user } = useAuth?.() || {};
   const gymId = user?.gym_id || 1;
 
   const [filters, setFilters] = useState({ q: '', status_enum: undefined, model_id: undefined, location_id: undefined });
@@ -339,7 +357,7 @@ function AssetsTab() {
   const reload = async () => {
     await assets.run({ gym_id: gymId, ...filters, limit: 100 });
   };
-  useEffect(() => { models.run({ limit: 200 }); reload(); }, []); // init
+  useEffect(() => { models.run({ limit: 200, gym_id: gymId }); reload(); }, []); // init
 
   const openCreate = () => { setEditing(null); form.resetFields(); setModalOpen(true); };
   const openEdit = (row) => { setEditing(row); form.setFieldsValue(row); setModalOpen(true); };
@@ -460,7 +478,7 @@ function StockTab() {
   const reload = async () => {
     await stock.run({ gym_id: gymId, ...filters, limit: 200 });
   };
-  useEffect(() => { models.run({ limit: 200 }); reload(); }, []);
+  useEffect(() => { models.run({ limit: 200, gym_id: gymId }); reload(); }, []);
 
   const openCreate = () => { setEditing(null); form.resetFields(); setModalOpen(true); };
   const openEdit = async (row) => {
