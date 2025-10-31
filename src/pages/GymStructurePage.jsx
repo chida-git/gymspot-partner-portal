@@ -6,7 +6,7 @@ import {
 } from '../services/api';
 import { PlusOutlined, EditOutlined, DeleteOutlined, SaveOutlined } from '@ant-design/icons';
 // se hai un AuthContext che espone la palestra corrente, usalo; altrimenti fallback 1
-// import { useAuth } from '../context/AuthContext';
+ import { useAuth } from '../context/AuthContext';
 
 const useAsync = (fn) => {
   const [loading, setLoading] = useState(false);
@@ -23,8 +23,9 @@ const useAsync = (fn) => {
 };
 
 export default function GymStructurePage() {
-  // const { user } = useAuth();
-  const gymId = 1; // user?.gym_id || 1
+  const { user } = useAuth(); // assumo contenga gymId o simile
+  // se non lo hai, ricava l'id da URL (useParams) o dal contesto
+  const gymId = user?.gym_id ?? 1;
 
   // ---- CAPACITY ----
   const cap = useAsync(() => getGymCapacityConfig(gymId));

@@ -5,9 +5,12 @@ import GymHeader from '../components/GymHeader.jsx'
 import PlansTable from '../components/PlansTable.jsx'
 import PlanCreateModal from '../components/PlanCreateModal.jsx'
 import { getGymDetail, getPlans, updatePlan, createPlan, deletePlan } from '../services/api.js'
+ import { useAuth } from '../context/AuthContext';
+ 
 export default function PlansPage(){
   const [sp] = useSearchParams()
-  const gymId = Number(sp.get('gym_id') || 1)
+      const { user } = useAuth();
+      const gymId = user?.gym_id ?? 1;
   const [plans, setPlans] = useState([])
   const [creating, setCreating] = useState(false)
   useEffect(() => { (async () => {

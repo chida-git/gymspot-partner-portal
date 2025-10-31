@@ -35,7 +35,7 @@ const { Title, Text } = Typography;
 
 function resolveGymId(propGymId) {
   const { user } = useAuth(); 
-  return user?.gymId ?? 1;
+  return user?.gym_id ?? 1;
 }
 
 const ExtrasPage = ({ gymId: gymIdProp }) => {

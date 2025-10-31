@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useState, useContext } from 'react';
 import ProfileForm from '../components/ProfileForm';
 import ImagesCarouselManager from '../components/ImagesCarouselManager';
 import IndexImageEditor from '../components/IndexImageEditor';
@@ -6,9 +6,8 @@ import { getGymProfile, updateGymProfile } from '../services/api';
 import { useAuth } from '../context/AuthContext'; // supponendo esista
 
 export default function GymProfilePage() {
-  const { user } = useAuth(); // assumo contenga gymId o simile
-  // se non lo hai, ricava l'id da URL (useParams) o dal contesto
-  const gymId = user?.gymId ?? 1;
+  const { user } = useAuth();
+  const gymId = user?.gym_id ?? 1;
 
   const [initial, setInitial] = useState(null);
   const [saving, setSaving] = useState(false);

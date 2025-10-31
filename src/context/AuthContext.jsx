@@ -14,6 +14,7 @@ export function AuthProvider({ children }){
 
   const value = useMemo(() => ({
     token, setToken, partner, setPartner,
+    user: partner, 
     login: (t, p) => { setToken(t); setPartner(p); message.success('Login effettuato') },
     logout: () => { setToken(''); setPartner(null); message.info('Logout') }
   }), [token, partner])

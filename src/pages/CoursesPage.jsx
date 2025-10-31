@@ -28,7 +28,7 @@ function useGymId() {
   try 
   { 
     const { user } = useAuth();
-    return user?.gymId ?? 1; 
+    return user?.gym_id ?? 1; 
   }
   catch { return null; }
 }

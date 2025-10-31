@@ -9,6 +9,7 @@ import {
   getMarketingContacts, setCampaignRecipients,
   addContactFromUser, getUsers, createExternalContact, deleteCampaign
 } from '../services/api'
+import { useAuth } from '../context/AuthContext';
 
 const { Title, Text } = Typography
 const { Option } = Select
@@ -321,8 +322,11 @@ function CampaignEditModal({ open, onClose, gymId, templates, record, onUpdated 
 
 // ---------- Pagina principale ----------
 export default function NewsletterPage(){
+    const { user } = useAuth(); // assumo contenga gymId o simile
+    // se non lo hai, ricava l'id da URL (useParams) o dal contesto
+    const gymId = user?.gym_id ?? 1;
   // recupero gymId da contesto/storage come fai altrove
-  const gymId = Number(localStorage.getItem('gym_id') || 1)
+ // const gymId = Number(localStorage.getItem('gym_id') || 1)
 
   const [loading, setLoading] = useState(false)
   const [templates, setTemplates] = useState([])
